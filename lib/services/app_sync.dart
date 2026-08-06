@@ -75,10 +75,6 @@ class AppSync {
       StorageService.swipeActionsEnabled = data['swipeActionsEnabled'] as bool;
       changed++;
     }
-    if (data['pinchZoomEnabled'] != null) {
-      StorageService.pinchZoomEnabled = data['pinchZoomEnabled'] as bool;
-      changed++;
-    }
     if (data['openaiApiKey'] != null) {
       StorageService.openaiApiKey = data['openaiApiKey'] as String;
       changed++;
