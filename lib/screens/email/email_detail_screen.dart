@@ -8,7 +8,6 @@ import '../../models/email.dart';
 import '../../services/ai_service.dart';
 import '../../services/api_service.dart';
 import '../../services/translate_service.dart';
-import '../../utils/storage.dart';
 import '../../utils/theme.dart';
 
 class EmailDetailScreen extends StatefulWidget {
