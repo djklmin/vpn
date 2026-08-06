@@ -39,7 +39,6 @@ class AppSync {
       'showSenderAvatar': StorageService.showSenderAvatar,
       'autoLoadImages': StorageService.autoLoadImages,
       'swipeActionsEnabled': StorageService.swipeActionsEnabled,
-      'pinchZoomEnabled': StorageService.pinchZoomEnabled,
       'openaiApiKey': StorageService.openaiApiKey ?? '',
       'openaiBaseUrl': StorageService.openaiBaseUrl ?? '',
       'openaiModel': StorageService.openaiModel ?? '',
