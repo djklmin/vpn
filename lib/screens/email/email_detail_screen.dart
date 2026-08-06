@@ -33,36 +33,11 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
   String? _translatedText;
   bool _showingTranslation = false;
 
-  double _contentScale = 1.0;
-  late final TransformationController _transformController;
-  static const double _minScale = 0.3;
-  static const double _maxScale = 5.0;
-
   @override
   void initState() {
     super.initState();
     _email = widget.email;
     _isStarred = _email.isStarred;
-    _transformController = TransformationController();
-  }
-
-  @override
-  void dispose() {
-    _transformController.dispose();
-    super.dispose();
-  }
-
-  void _zoomBy(double factor) {
-    final currentScale = _transformController.value.getMaxScaleOnAxis();
-    final newScale = (currentScale * factor).clamp(_minScale, _maxScale);
-    if (newScale == currentScale) return;
-    setState(() => _contentScale = newScale);
-    _transformController.value = Matrix4.diagonal3Values(newScale, newScale, 1.0);
-  }
-
-  void _zoomReset() {
-    setState(() => _contentScale = 1.0);
-    _transformController.value = Matrix4.identity();
   }
 
   Future<void> _copyEmailContent() async {
@@ -307,15 +282,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                             _translateEmail();
                           }
                           break;
-                        case 'zoom_in':
-                          _zoomBy(1.25);
-                          break;
-                        case 'zoom_out':
-                          _zoomBy(1 / 1.25);
-                          break;
-                        case 'zoom_reset':
-                          _zoomReset();
-                          break;
+
                       }
                     },
                     itemBuilder: (ctx) => [
@@ -340,32 +307,6 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                           Text(_showingTranslation ? '隐藏翻译' : '一键翻译'),
                         ]),
                       ),
-                      if (StorageService.pinchZoomEnabled) ...[
-                        const PopupMenuItem(
-                          value: 'zoom_in',
-                          child: Row(children: [
-                            Icon(Icons.zoom_in_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('放大'),
-                          ]),
-                        ),
-                        const PopupMenuItem(
-                          value: 'zoom_out',
-                          child: Row(children: [
-                            Icon(Icons.zoom_out_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('缩小'),
-                          ]),
-                        ),
-                        const PopupMenuItem(
-                          value: 'zoom_reset',
-                          child: Row(children: [
-                            Icon(Icons.restart_alt_outlined, size: 20),
-                            SizedBox(width: 8),
-                            Text('恢复默认大小'),
-                          ]),
-                        ),
-                      ],
                       const PopupMenuDivider(),
                       const PopupMenuItem(
                         value: 'delete',
@@ -380,151 +321,97 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
                 ],
               ),
             ),
-            // ===== InteractiveViewer 包裹整个内容（邮件头部 + 邮件正文，一起缩放）=====
+            // ===== 邮件内容 =====
             Expanded(
-              child: InteractiveViewer(
-                transformationController: _transformController,
-                minScale: _minScale,
-                maxScale: _maxScale,
-                panEnabled: StorageService.pinchZoomEnabled,
-                scaleEnabled: StorageService.pinchZoomEnabled,
-                boundaryMargin: const EdgeInsets.all(double.infinity),
-                alignment: Alignment.topCenter,
-                onInteractionEnd: StorageService.pinchZoomEnabled
-                    ? (details) {
-                        final scale =
-                            _transformController.value.getMaxScaleOnAxis();
-                        if ((scale - _contentScale).abs() > 0.01) {
-                          setState(() => _contentScale = scale);
-                        }
-                      }
-                    : null,
-                child: SingleChildScrollView(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    color: cs.surface,
-                    child: SelectionArea(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildEmailHeader(
-                            cs: cs,
-                            isGoogle: isGoogle,
-                            isDark: isDark,
-                            senderEmail: senderEmail,
-                            displayName: displayName,
-                            accountColor: accountColor,
+              child: SingleChildScrollView(
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  color: cs.surface,
+                  child: SelectionArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildEmailHeader(
+                          cs: cs,
+                          isGoogle: isGoogle,
+                          isDark: isDark,
+                          senderEmail: senderEmail,
+                          displayName: displayName,
+                          accountColor: accountColor,
+                        ),
+                        Container(
+                          height: 0.5,
+                          color: cs.outlineVariant,
+                        ),
+                        _buildEmailBody(isDark),
+                        // 翻译结果
+                        if (_translating) ...[
+                          const SizedBox(height: 24),
+                          Center(
+                            child: Column(
+                              children: [
+                                const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '正在翻译...',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+                        if (_showingTranslation && _translatedText != null) ...[
                           Container(
                             height: 0.5,
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
                             color: cs.outlineVariant,
                           ),
-                          _buildEmailBody(isDark),
-                          // 翻译结果
-                          if (_translating) ...[
-                            const SizedBox(height: 24),
-                            Center(
-                              child: Column(
-                                children: [
-                                  const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    '正在翻译...',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (_showingTranslation && _translatedText != null) ...[
-                            Container(
-                              height: 0.5,
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
-                              color: cs.outlineVariant,
-                            ),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.translate_outlined, size: 18, color: cs.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '中文翻译',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: cs.primary,
-                                        ),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.translate_outlined, size: 18, color: cs.primary),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '中文翻译',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: cs.primary,
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SelectableText(
-                                    _translatedText!,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      height: 1.6,
-                                      color: cs.onSurface,
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                SelectableText(
+                                  _translatedText!,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    height: 1.6,
+                                    color: cs.onSurface,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            // ===== 底部缩放指示器 =====
-            if (StorageService.pinchZoomEnabled && _contentScale != 1.0)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: cs.surfaceVariant.withOpacity(0.5),
-                  border: Border(
-                    top: BorderSide(color: cs.outlineVariant, width: 0.5),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${(_contentScale * 100).toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: _zoomReset,
-                      child: Text(
-                        '重置',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
@@ -709,6 +596,9 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
       );
     }
 
+    // 深色模式下增强对比度
+    final textColor = isDark ? Colors.white : cs.onSurface;
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: hasHtml
@@ -725,7 +615,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
               textStyle: TextStyle(
                 fontSize: 15,
                 height: 1.6,
-                color: cs.onSurface,
+                color: textColor,
               ),
             )
           : SelectableText(
@@ -733,7 +623,7 @@ class _EmailDetailScreenState extends State<EmailDetailScreen> {
               style: TextStyle(
                 fontSize: 15,
                 height: 1.6,
-                color: cs.onSurface,
+                color: textColor,
               ),
             ),
     );

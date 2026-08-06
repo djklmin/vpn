@@ -115,12 +115,6 @@ class StorageService {
     _prefs?.setBool('swipeActionsEnabled', value);
   }
 
-  /// 邮件详情页双指缩放，默认开启
-  static bool get pinchZoomEnabled => _prefs?.getBool('pinchZoomEnabled') ?? true;
-  static set pinchZoomEnabled(bool value) {
-    _prefs?.setBool('pinchZoomEnabled', value);
-  }
-
   static String? get openaiApiKey => _prefs?.getString('openaiApiKey');
   static set openaiApiKey(String? value) {
     if (value != null) {

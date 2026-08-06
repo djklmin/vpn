@@ -29,7 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _showAvatar = true;
   bool _autoLoadImages = true;
   bool _swipeActionsEnabled = true;
-  bool _pinchZoomEnabled = true;
+
   final _apiKeyController = TextEditingController();
   final _baseUrlController = TextEditingController();
   List<String> _models = [];
@@ -68,7 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showAvatar = StorageService.showSenderAvatar;
     _autoLoadImages = StorageService.autoLoadImages;
     _swipeActionsEnabled = StorageService.swipeActionsEnabled;
-    _pinchZoomEnabled = StorageService.pinchZoomEnabled;
+
     _apiKeyController.text = StorageService.openaiApiKey ?? '';
     _baseUrlController.text = StorageService.openaiBaseUrl ?? '';
     _selectedModel = StorageService.openaiModel;
@@ -543,19 +543,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (val) {
                   setState(() => _swipeActionsEnabled = val);
                   StorageService.swipeActionsEnabled = val;
-                },
-              ),
-            ),
-            const Divider(height: 1, indent: 56),
-            _buildTile(
-              icon: Icons.zoom_in_outlined,
-              title: '双指缩放',
-              subtitle: '邮件详情页双指缩放阅读',
-              trailing: Switch(
-                value: _pinchZoomEnabled,
-                onChanged: (val) {
-                  setState(() => _pinchZoomEnabled = val);
-                  StorageService.pinchZoomEnabled = val;
                 },
               ),
             ),
